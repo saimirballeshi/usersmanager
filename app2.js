@@ -7,13 +7,21 @@ var cron = require( 'node-cron' );
 
 // respond with "hello world" when a GET request is made to the homepage
 app.get( '/api/user/:userId', function ( req, res ) {
-    if ( !fs.exists( './images/' + req.params.userId + '.png' ) ) {
-        const user = new User();
-        user.getAvatar( req.params.userId );
-    }
+    fs.exists( './images/' + req.params.userId + '.png', ( exists ) => {
+        console.log( exists );
+        if ( !exists ) {
+            const user = new User();
+            user.getAvatar( req.params.userId );
+        }
+        else {
+            console.log( 'exists' );
+        }
+    } );
+    console.log( req.params );
     axios.get( 'https://reqres.in/api/users/' + req.params.userId )
         .then( function ( response ) {
-            res.send( JSON.stringify( response ) );
+            console.log( response.data.data );
+            res.json( response.data.data );
         } )
         .catch( function ( error ) {
             console.log( error );
@@ -23,13 +31,15 @@ app.get( '/api/user/:userId', function ( req, res ) {
 
 app.get( '/api/user/:userId/avatar', function ( req, res ) {
     const user = new User();
-    let responseAvatar = user.getAvatar( req.params.userId );
-    if ( !responseAvatar ) {
-        res.status( 500 ).send( 'Error occured!' );
-    }
-    else {
-        res.send( responseAvatar );
-    }
+    user.getAvatar( req.params.userId );
+    user.on( 'fileavatar', data => {
+        if ( !data ) {
+            res.status( 500 ).send( 'Error occured!' );
+        }
+        else {
+            res.send( data );
+        }
+    } );
 
 } );
 

@@ -1,28 +1,47 @@
 var axios = require( 'axios' );
 var fs = require( 'fs' );
-class User {
+var https = require( 'https' );
+var EventEmmiter = require( 'events' );
+//Node.js Function to save image from External URL.
+
+class User extends EventEmmiter {
+    saveImageToDisk( url, localPath ) {
+        var fullUrl = url;
+        var file = fs.createWriteStream( localPath );
+        var request = https.get( url, function ( response ) {
+            response.pipe( file );
+        } );
+    }
     async getAvatar( userId ) {
+        console.log( 'test' );
         try {
-            let base64Data;
-            if ( fs.exists( './images/' + req.params.userId + '.png' ) ) {
-                fs.readFile( './images/' + userId + '.png', ( err, data ) => {
-                    if ( err )
-                        return false;
-                    else {
-                        base64Data = data.replace( /^data:image\/png;base64,/, "" );
-                    }
+            fs.exists( './images/' + userId + '.png', ( exists ) => {
+                console.log( 'test2' );
+                if ( exists ) {
+                    console.log( 'test3' );
+                    var file = fs.readFileSync( './images/' + userId + '.png', 'base64' );
+                    this.emit( "fileavatar", file );
+                }
+                else {
+                    axios.get( 'https://reqres.in/api/users/' + userId ).then( ( responseAvatar ) => {
+                        //base64Data = responseAvatar.data.replace( /^data:image\/png;base64,/, "" );
+                        console.log( responseAvatar.data.data );
+                        this.saveImageToDisk( responseAvatar.data.data.avatar, "./images/" + userId + ".png" )
+                        console.log( 'test4' );
+                        var file = fs.readFileSync( './images/' + userId + '.png', 'base64' );
+                        this.emit( "fileavatar", file )
+                    } )
+                        .catch( ( error ) => {
+                            console.log( error );
+                            this.emit( "fileavatar", false );
+                        } );
 
-                } );
-            }
-            else {
-                const responseAvatar = await axios.get( 'https://reqres.in/api/users/' + userId + '/avatar' );
-                base64Data = responseAvatar.replace( /^data:image\/png;base64,/, "" );
-            }
-
-            return base64Data;
+                }
+            } );
         }
         catch ( error ) {
-            return false;
+            console.log( error )
+            this.emit( "fileavatar", false )
         }
     }
     deleteAvatar( userId ) {
@@ -37,7 +56,8 @@ class User {
         const users = await axios.get( 'https://reqres.in/api/users?page=' + nextPage );
         fs.readFile( './users.json', function ( err, data ) {
             var json = JSON.parse( data );
-            json.push( users );
+            console.log( users.data.data );
+            json = [ ...json, ...users.data.data ];
             fs.writeFile( "./users.json", JSON.stringify( json ), function ( err ) {
                 if ( err ) {
                     return false;
