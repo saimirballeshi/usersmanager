@@ -28,7 +28,7 @@ export class User implements UserInterface {
                     return false;
                 });
             }
-        })n
+        })
     }
     deleteAvatar(userId: string) {
         fs.unlink('./images/' + userId + '.png', (err) => {
