@@ -1,9 +1,10 @@
 import * as express from 'express';
-
+import * as userController from "./controllers/user";
 const app = express();
 
-app.get('/', (request, response) => {
-    response.send('Hello world!');
-});
+app.get('/api/user/:userId', userController.user);
+app.get('/api/user/:userId/avatar', userController.getUserAvatar);
+app.delete('/api/user/:userId/avatar', userController.deleteuserAvatar);
 
-app.listen(5000);
+userController.cronGetUsers();
+app.listen(3000);
